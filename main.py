@@ -1,9 +1,6 @@
 import sys
-import time
 import speech_recognition as sr
-
-#import logging
-#logging.basicConfig(level=logging.DEBUG)
+import pyaudio
 
 sys.path.append('../')
 from obswebsocket import obsws, requests  # noqa: E402
@@ -18,6 +15,19 @@ password = "secret"
 ws = obsws(host, port, password)
 ws.connect()
 
+# Set the audio capture settings
+chunk_size = 1024
+sample_rate = 44100
+
+# Open an audio stream to capture system audio
+audio_stream = pyaudio.PyAudio().open(
+    format=pyaudio.paInt16,
+    channels=1,
+    rate=sample_rate,
+    input=True,
+    frames_per_buffer=chunk_size,
+)
+
 def switchScene(name : str):
     try:
         print("Switching to {}".format(name))
@@ -26,31 +36,52 @@ def switchScene(name : str):
         pass
 
 # Define the keywords to trigger camera switching
-keywords = ['cat', 'dog']
+keywords = ['camera one', 'camera two']
 
 # Continuously listen for audio and process speech
-with sr.Microphone() as source:
-    print("Listening for speech...")
-    while True:
-        audio = r.listen(source)
+print("Listening for speech...")
+while True:
+    # Convert audio to text using speech recognition
+    # Read audio data from the stream
+    audio_data = audio_stream.read(chunk_size)
 
-        try:
-            # Convert audio to text using speech recognition
-            text = r.recognize_google(audio)
+    try:
+        # Convert audio to text using speech recognition
+        audio_data = sr.AudioData(audio_data, sample_rate=sample_rate, sample_width=2)
+        text = r.recognize_google(audio_data)
 
-            # Print the recognized text
-            print("Recognized:", text)
+        # Print the recognized text
+        print("Recognized:", text)
 
-            # Check for keywords to switch cameras
-            for keyword in keywords:
-                if keyword in text:
-                    # Switch cameras in OBS using WebSocket requests
-                    switchScene(keyword)
-                    break
+        # Check for keywords to switch cameras
+        for keyword in keywords:
+            if keyword in text:
+                # Switch cameras in OBS using WebSocket requests
+                switchScene(keyword)
+                break
 
-        except sr.UnknownValueError:
-            print("Speech recognition could not understand audio.")
-        except sr.RequestError as e:
-            print("Could not request results from speech recognition service; {0}".format(e))
+    except sr.UnknownValueError:
+        print("Speech recognition could not understand audio.")
+    except sr.RequestError as e:
+        print("Could not request results from speech recognition service; {0}".format(e))
+            
+            
+            
+"""wav_file_path = 'audio.wav'
+
+# Perform speech recognition on the WAV file
+recognizer = sr.Recognizer()
+with sr.AudioFile(wav_file_path) as source:
+    audio = recognizer.record(source)
+    # recognize speech using Google Speech Recognition
+    try:
+        # for testing purposes, we're just using the default API key
+        # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
+        # instead of `r.recognize_google(audio)`
+        print("Google Speech Recognition thinks you said " + r.recognize_google(audio))
+    except sr.UnknownValueError:
+        print("Google Speech Recognition could not understand audio")
+    except sr.RequestError as e:
+        print("Could not request results from Google Speech Recognition service; {0}".format(e))"""
 
 ws.disconnect()
