@@ -1,9 +1,34 @@
 import sys
+import time
+
 import speech_recognition as sr
 import pyaudio
 
+import retrieve_data
+
+from pywinauto import Application
+
 sys.path.append('../')
 from obswebsocket import obsws, requests  # noqa: E402
+
+def open_programs():
+    obs_path = r"D:\obs-studio\bin\64bit\obs64.exe"
+    obs_working_dir = r"D:\obs-studio\bin\64bit"
+    app = Application()
+    app.start(obs_path, work_dir=obs_working_dir)
+
+    dlg_spec = app.window()
+    dlg_spec.move_window(x=None, y=None, width=960, height=1080, repaint=True)
+    
+    #chrome_path = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+    #bookmark_url = "https://www.facebook.com/live/producer" 
+    #subprocess.Popen([chrome_path, bookmark_url])
+    
+    
+
+open_programs()
+
+
 
 r = sr.Recognizer()
 r.energy_threshold = 50
