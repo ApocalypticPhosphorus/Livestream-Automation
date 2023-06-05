@@ -8,29 +8,83 @@ import retrieve_data
 
 from pywinauto import Application
 
+from selenium import webdriver
+
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+
 sys.path.append('../')
 from obswebsocket import obsws, requests  # noqa: E402
 
+chrome = None
+
 def open_programs():
+    #Open OBS
     obs_path = r"D:\obs-studio\bin\64bit\obs64.exe"
     obs_working_dir = r"D:\obs-studio\bin\64bit"
     app = Application()
     app.start(obs_path, work_dir=obs_working_dir)
 
+    time.sleep(3)
+
     dlg_spec = app.window()
     dlg_spec.move_window(x=None, y=None, width=960, height=1080, repaint=True)
     
-    #chrome_path = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-    #bookmark_url = "https://www.facebook.com/live/producer" 
-    #subprocess.Popen([chrome_path, bookmark_url])
+    #Open Chrome
+    options = Options()
+    options.add_argument("--disable-notifications")
+    options.add_argument("--use-fake-ui-for-media-stream")
+    options.add_experimental_option("detach", True)
+
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument(r"--user-data-dir=C:\Users\TJ Vasquez\AppData\Local\Google\Chrome\User Data") #e.g. C:\Users\You\AppData\Local\Google\Chrome\User Data
+    chrome_options.add_argument(r'--profile-directory=Default') #e.g. Profile 3
+
+    chrome_options.add_argument('--disable-dev-shm-usage')
+
+    global chrome
+    chrome = webdriver.Chrome(options=options, chrome_options=chrome_options) 
+
+def setup_livestream():
+    chrome.get("https://www.facebook.com/live/producer/")
     
+    time.sleep(2)
+
+    chrome.find_element("xpath", "//div[@aria-label='Go live']").click()
+
+    time.sleep(4)
     
+    chrome.find_element("xpath", "//div[@aria-label='Streaming software']").click()
+    
+    time.sleep(0.1)
+    
+    title_box = chrome.find_element(By.XPATH, '//input[@maxlength="250" and contains(@class, "x1i10hfl")]')
+    title_box.clear()
+    title_box.send_keys(retrieve_data.get_title())
+
+    time.sleep(0.1)
+
+    # Find and fill the description text box
+    description_box = chrome.find_element(By.XPATH, './/span[@data-contents="true"]')
+    description = description_box.find_element(By.XPATH, ".//*")
+    description.send_keys(retrieve_data.get_description())
+    
+    time.sleep(1)
+    
+    element = chrome.find_element(By.XPATH,"//input[@aria-label='Stream key']")
+    value = element.get_attribute("value")
+    print(value)
+    
+    time.sleep(400)
+    #ws.call(obsws.Actions.SetStreamingSettings, {"key": stream_key})
+
 
 open_programs()
+setup_livestream()
 
-
-
-r = sr.Recognizer()
+"""r = sr.Recognizer()
 r.energy_threshold = 50
 r.dynamic_energy_threshold = False
 
@@ -92,7 +146,7 @@ while True:
             
             
             
-"""wav_file_path = 'audio.wav'
+wav_file_path = 'audio.wav'
 
 # Perform speech recognition on the WAV file
 recognizer = sr.Recognizer()
@@ -107,6 +161,5 @@ with sr.AudioFile(wav_file_path) as source:
     except sr.UnknownValueError:
         print("Google Speech Recognition could not understand audio")
     except sr.RequestError as e:
-        print("Could not request results from Google Speech Recognition service; {0}".format(e))"""
-
-ws.disconnect()
+        print("Could not request results from Google Speech Recognition service; {0}".format(e))
+ws.disconnect()"""
